@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Taskflow: a project task manager with board, list and dashboard views. Portfolio demo by Emmanuel Sanchez.">
+<title>Taskflow | Project Task Manager · Emmanuel Sanchez</title>
+<style>
+:root{--bg:#0b1220;--panel:#0f1a2c;--card:#14213a;--card2:#182845;--text:#edf3ff;--muted:#9fb0cc;--line:#ffffff1c;--teal:#56e0c2;--orange:#ffbd7a;--red:#ff7b7b;--blue:#7ab8ff;--violet:#b99bff;--radius:14px}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 0% 0%,#17334f,transparent 36rem),var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--teal)}
+.hidden{display:none!important}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 24px;border-bottom:1px solid var(--line);background:#0b1220cc;backdrop-filter:blur(8px);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.02em;font-size:1.15rem}
+.logo i{width:30px;height:30px;border-radius:9px;background:var(--teal);display:grid;place-items:center;color:#08201c;font-style:normal;font-size:.95rem}
+.logo small{display:block;font-weight:500;color:var(--muted);font-size:.72rem;letter-spacing:0}
+.tabs{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:3px}
+.tabs button{background:none;border:0;padding:7px 15px;border-radius:99px;color:var(--muted);cursor:pointer;font-weight:600}
+.tabs button.on{background:var(--teal);color:#08201c}
+.actions{display:flex;gap:8px;align-items:center}
+.btn{background:var(--panel);border:1px solid var(--line);padding:8px 14px;border-radius:99px;cursor:pointer;font-weight:600;white-space:nowrap}
+.btn:hover{border-color:#ffffff40}
+.btn.primary{background:var(--teal);color:#08201c;border-color:transparent}
+.btn.danger{color:var(--red);border-color:#ff7b7b44}
+.notice{margin:14px 24px 0;padding:9px 14px;border-radius:10px;background:#ffbd7a14;border:1px solid #ffbd7a33;color:#ffd9b0;font-size:.82rem;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.notice a{color:#ffd9b0}
+.filters{display:flex;gap:10px;padding:14px 24px;flex-wrap:wrap;align-items:center}
+.filters input,.filters select{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 11px;min-width:0}
+.filters input{flex:1 1 220px;max-width:320px}
+.count{color:var(--muted);font-size:.82rem;margin-left:auto}
+main{padding:0 24px 40px}
+/* board */
+.board{display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:14px;overflow-x:auto;padding-bottom:8px}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px;min-height:420px;display:flex;flex-direction:column;transition:border-color .15s,background .15s}
+.col.over{border-color:var(--teal);background:#56e0c20d}
+.colhead{display:flex;justify-content:space-between;align-items:center;margin:2px 4px 12px}
+.colhead h3{margin:0;font-size:.82rem;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.pill{background:#ffffff12;border-radius:99px;padding:1px 9px;font-size:.75rem;color:var(--muted)}
+.addcol{background:none;border:1px dashed var(--line);color:var(--muted);border-radius:10px;padding:8px;cursor:pointer;margin-top:auto}
+.addcol:hover{color:var(--text);border-color:#ffffff40}
+.task{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;cursor:grab;transition:transform .12s,border-color .12s}
+.task:hover{border-color:#ffffff38;transform:translateY(-1px)}
+.task.dragging{opacity:.4}
+.task h4{margin:6px 0 8px;font-size:.95rem;line-height:1.35}
+.meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:.74rem;color:var(--muted)}
+.proj{font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.prio{border-radius:99px;padding:1px 8px;font-size:.7rem;font-weight:700;border:1px solid}
+.prio.High{color:var(--red);border-color:#ff7b7b55}
+.prio.Medium{color:var(--orange);border-color:#ffbd7a55}
+.prio.Low{color:var(--blue);border-color:#7ab8ff55}
+.due.overdue{color:var(--red);font-weight:700}
+.due.soon{color:var(--orange)}
+.av{width:24px;height:24px;border-radius:50%;display:inline-grid;place-items:center;font-size:.66rem;font-weight:800;color:#08201c;margin-left:auto}
+.bar{height:5px;background:#ffffff14;border-radius:99px;overflow:hidden;margin-top:9px}
+.bar span{display:block;height:100%;background:var(--teal);border-radius:99px}
+.empty{color:var(--muted);font-size:.82rem;text-align:center;padding:20px 6px}
+/* list */
+.tablewrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-size:.88rem}
+th{color:var(--muted);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:var(--text)}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#ffffff07}
+.st{border-radius:99px;padding:2px 9px;font-size:.74rem;font-weight:700;white-space:nowrap}
+/* dashboard */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.kpi,.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.kpi b{display:block;font-size:2rem;letter-spacing:-.03em;line-height:1.1;margin-top:4px}
+.kpi span{color:var(--muted);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
+.kpi.warn b{color:var(--red)}
+.kpi.good b{color:var(--teal)}
+.dash{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;align-items:start}
+.panel h3{margin:0 0 14px;font-size:.82rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.row{margin-bottom:14px}
+.row .lbl{display:flex;justify-content:space-between;font-size:.86rem;margin-bottom:5px}
+.row .lbl em{color:var(--muted);font-style:normal}
+.stack{display:flex;height:9px;border-radius:99px;overflow:hidden;background:#ffffff10}
+.upcoming li{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:.88rem;cursor:pointer}
+.upcoming li:last-child{border:0}
+.upcoming{list-style:none;margin:0;padding:0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:var(--muted);margin-top:4px}
+/* modal */
+.overlay{position:fixed;inset:0;background:#02060dcc;display:grid;place-items:center;z-index:50;padding:16px}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:18px;width:min(620px,100%);max-height:92vh;overflow:auto;padding:22px}
+.modal h2{margin:0 0 16px;font-size:1.2rem}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.field textarea{min-height:80px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.checks{list-style:none;padding:0;margin:0 0 8px}
+.checks li{display:flex;align-items:center;gap:8px;padding:5px 0}
+.checks li span{flex:1}
+.checks li.done span{text-decoration:line-through;color:var(--muted)}
+.checks button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:1rem}
+.addcheck{display:flex;gap:8px}
+.addcheck input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+.mfoot{display:flex;justify-content:space-between;gap:8px;margin-top:18px;flex-wrap:wrap}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--teal);color:#08201c;padding:9px 16px;border-radius:99px;font-weight:700;z-index:60;font-size:.88rem}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+@media (max-width:900px){.kpis{grid-template-columns:1fr 1fr}.dash{grid-template-columns:1fr}.board{grid-template-columns:repeat(4,82vw);scroll-snap-type:x mandatory}.col{scroll-snap-align:start}}
+@media (max-width:560px){.top{padding:12px 16px}.filters,main{padding-left:16px;padding-right:16px}.notice{margin:12px 16px 0}.grid2{grid-template-columns:1fr}.actions .btn.ghost{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo"><i>✓</i><div>Taskflow<small>Project task manager</small></div></div>
+  <div class="tabs" role="tablist">
+    <button data-view="board" class="on" role="tab">Board</button>
+    <button data-view="list" role="tab">List</button>
+    <button data-view="dash" role="tab">Dashboard</button>
+  </div>
+  <div class="actions">
+    <button class="btn ghost" id="exportBtn" title="Download tasks as JSON">Export</button>
+    <button class="btn ghost" id="resetBtn" title="Restore the demo data">Reset demo</button>
+    <button class="btn primary" id="newBtn">+ New task</button>
+  </div>
+</header>
+
+<div class="notice"><span>Portfolio demo with fictional projects and people. Your changes are saved only in this browser.</span><a href="../">← Back to portfolio</a></div>
+
+<div class="filters">
+  <input id="q" type="search" placeholder="Search tasks…" aria-label="Search tasks">
+  <select id="fProject" aria-label="Filter by project"></select>
+  <select id="fPrio" aria-label="Filter by priority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option></select>
+  <select id="fOwner" aria-label="Filter by owner"></select>
+  <span class="count" id="count"></span>
+</div>
+
+<main>
+  <section id="view-board"><div class="board" id="board"></div></section>
+  <section id="view-list" class="hidden"><div class="tablewrap"><table><thead><tr>
+    <th data-sort="title">Task</th><th data-sort="project">Project</th><th data-sort="status">Status</th><th data-sort="priority">Priority</th><th data-sort="owner">Owner</th><th data-sort="due">Due</th><th data-sort="progress">Checklist</th>
+  </tr></thead><tbody id="rows"></tbody></table></div></section>
+  <section id="view-dash" class="hidden">
+    <div class="kpis" id="kpis"></div>
+    <div class="dash">
+      <div class="panel"><h3>Progress by project</h3><div id="byProject"></div>
+        <div class="legend" id="legend"></div></div>
+      <div>
+        <div class="panel" style="margin-bottom:14px"><h3>Due in the next 7 days</h3><ul class="upcoming" id="upcoming"></ul></div>
+        <div class="panel"><h3>Open tasks by owner</h3><div id="byOwner"></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="overlay hidden" id="overlay">
+  <form class="modal" id="form" autocomplete="off">
+    <h2 id="mTitle">New task</h2>
+    <div class="field"><label for="tTitle">Title</label><input id="tTitle" required maxlength="120"></div>
+    <div class="field"><label for="tDesc">Description</label><textarea id="tDesc" maxlength="1000"></textarea></div>
+    <div class="grid2">
+      <div class="field"><label for="tProject">Project</label><input id="tProject" list="projList" required maxlength="40"><datalist id="projList"></datalist></div>
+      <div class="field"><label for="tOwner">Owner</label><input id="tOwner" list="ownerList" required maxlength="40"><datalist id="ownerList"></datalist></div>
+      <div class="field"><label for="tStatus">Status</label><select id="tStatus"></select></div>
+      <div class="field"><label for="tPrio">Priority</label><select id="tPrio"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+      <div class="field"><label for="tDue">Due date</label><input id="tDue" type="date"></div>
+    </div>
+    <div class="field"><label>Checklist</label>
+      <ul class="checks" id="checks"></ul>
+      <div class="addcheck"><input id="newCheck" placeholder="Add a checklist item" maxlength="120"><button type="button" class="btn" id="addCheck">Add</button></div>
+    </div>
+    <div class="mfoot">
+      <button type="button" class="btn danger" id="delBtn">Delete</button>
+      <span style="display:flex;gap:8px;margin-left:auto"><button type="button" class="btn" id="cancelBtn">Cancel</button><button class="btn primary" type="submit">Save task</button></span>
+    </div>
+  </form>
+</div>
+
+<script>
+(() => {
+const STATUSES = [
+  {id:'todo', name:'To do', color:'#9fb0cc'},
+  {id:'doing', name:'In progress', color:'#7ab8ff'},
+  {id:'review', name:'Review', color:'#ffbd7a'},
+  {id:'done', name:'Done', color:'#56e0c2'}
+];
+const PRIO_RANK = {High:0, Medium:1, Low:2};
+const PROJECT_COLORS = ['#56e0c2','#ffbd7a','#b99bff','#7ab8ff','#ff9fc4','#c6e86b'];
+const KEY = 'taskflow-demo-v1';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const iso = d => { const z = new Date(d.getTime() - d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); };
+const plus = n => { const d = today(); d.setDate(d.getDate() + n); return iso(d); };
+const parse = s => { if (!s) return null; const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const daysLeft = s => { const d = parse(s); return d ? Math.round((d - today()) / 86400000) : null; };
+
+function seed() {
+  const c = (text, done=false) => ({id:uid(), text, done});
+  return [
+    {title:'Define launch scope and success metrics', project:'Website Relaunch', owner:'Ana Pérez', status:'done', priority:'High', due:plus(-9), desc:'Agree on what ships in v1 and how we measure it.', checklist:[c('Stakeholder interviews',true),c('Scope document',true),c('Sign-off',true)]},
+    {title:'Write homepage and services copy', project:'Website Relaunch', owner:'Luis Gómez', status:'review', priority:'Medium', due:plus(2), desc:'Bilingual copy, ES and EN.', checklist:[c('Homepage',true),c('Services',true),c('Translation review')]},
+    {title:'Build contact form with email routing', project:'Website Relaunch', owner:'María Díaz', status:'doing', priority:'High', due:plus(4), desc:'', checklist:[c('Form UI',true),c('Validation'),c('Routing rules')]},
+    {title:'Set up analytics and conversion goals', project:'Website Relaunch', owner:'María Díaz', status:'todo', priority:'Low', due:plus(12), desc:'', checklist:[]},
+    {title:'Fix broken links reported in QA', project:'Website Relaunch', owner:'Luis Gómez', status:'doing', priority:'Medium', due:plus(-1), desc:'12 links from the QA sheet.', checklist:[c('First 6 links',true),c('Remaining 6')]},
+    {title:'Prepare training schedule for new cohort', project:'Agent Onboarding', owner:'Ana Pérez', status:'doing', priority:'High', due:plus(1), desc:'Two shifts, 25 trainees each.', checklist:[c('Book rooms',true),c('Assign trainers',true),c('Send calendar invites')]},
+    {title:'Update knowledge base articles', project:'Agent Onboarding', owner:'Carlos Ruiz', status:'todo', priority:'Medium', due:plus(6), desc:'Billing and cancellation workflows.', checklist:[c('Billing'),c('Cancellations'),c('Disputes')]},
+    {title:'Create week-one certification quiz', project:'Agent Onboarding', owner:'Carlos Ruiz', status:'review', priority:'Medium', due:plus(3), desc:'', checklist:[c('Questions',true),c('Answer key',true)]},
+    {title:'Collect feedback from last cohort', project:'Agent Onboarding', owner:'Ana Pérez', status:'done', priority:'Low', due:plus(-5), desc:'', checklist:[]},
+    {title:'Map current inventory process', project:'Inventory Rollout', owner:'José Martínez', status:'done', priority:'Medium', due:plus(-14), desc:'Interview store staff and document steps.', checklist:[c('Interviews',true),c('Process map',true)]},
+    {title:'Import product catalog', project:'Inventory Rollout', owner:'José Martínez', status:'doing', priority:'High', due:plus(-3), desc:'1,200 SKUs from spreadsheet.', checklist:[c('Clean data',true),c('Test import'),c('Full import')]},
+    {title:'Train store staff on new app', project:'Inventory Rollout', owner:'Ana Pérez', status:'todo', priority:'Medium', due:plus(9), desc:'', checklist:[]},
+    {title:'Weekly status report to leadership', project:'Inventory Rollout', owner:'Luis Gómez', status:'todo', priority:'Low', due:plus(5), desc:'Risks, blockers, next steps.', checklist:[]}
+  ].map(t => ({id:uid(), created:Date.now(), ...t}));
+}
+
+let tasks = load();
+let view = 'board', sortKey = 'due', sortDir = 1, editing = null, draftChecks = [];
+
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) { const v = JSON.parse(raw); if (Array.isArray(v)) return v; } } catch (e) {}
+  return seed();
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(tasks)); } catch (e) {} }
+
+const projects = () => [...new Set(tasks.map(t => t.project))].sort();
+const owners = () => [...new Set(tasks.map(t => t.owner))].sort();
+const projColor = p => PROJECT_COLORS[Math.max(0, projects().indexOf(p)) % PROJECT_COLORS.length];
+const ownerColor = o => PROJECT_COLORS[(owners().indexOf(o) + 2) % PROJECT_COLORS.length];
+const initials = n => n.split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase();
+const statusOf = id => STATUSES.find(s => s.id === id) || STATUSES[0];
+const progress = t => t.checklist.length ? Math.round(t.checklist.filter(c => c.done).length / t.checklist.length * 100) : null;
+
+function dueInfo(t) {
+  if (!t.due) return {cls:'', text:'No date'};
+  const n = daysLeft(t.due);
+  const label = parse(t.due).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  if (t.status === 'done') return {cls:'', text:label};
+  if (n < 0) return {cls:'overdue', text:`${label} · ${-n}d late`};
+  if (n === 0) return {cls:'soon', text:'Due today'};
+  if (n <= 3) return {cls:'soon', text:`${label} · ${n}d`};
+  return {cls:'', text:label};
+}
+
+function filtered() {
+  const q = $('#q').value.trim().toLowerCase(), p = $('#fProject').value, pr = $('#fPrio').value, o = $('#fOwner').value;
+  return tasks.filter(t => (!p || t.project === p) && (!pr || t.priority === pr) && (!o || t.owner === o) &&
+    (!q || (t.title + ' ' + t.desc + ' ' + t.project + ' ' + t.owner).toLowerCase().includes(q)));
+}
+
+function fillSelect(el, items, allLabel) {
+  const cur = el.value;
+  el.innerHTML = `<option value="">${allLabel}</option>` + items.map(i => `<option>${esc(i)}</option>`).join('');
+  el.value = items.includes(cur) ? cur : '';
+}
+
+function render() {
+  fillSelect($('#fProject'), projects(), 'All projects');
+  fillSelect($('#fOwner'), owners(), 'All owners');
+  const list = filtered();
+  $('#count').textContent = `${list.length} of ${tasks.length} tasks`;
+  if (view === 'board') renderBoard(list);
+  if (view === 'list') renderList(list);
+  if (view === 'dash') renderDash(list);
+}
+
+function card(t) {
+  const d = dueInfo(t), pg = progress(t);
+  return `<article class="task" draggable="true" data-id="${t.id}" tabindex="0" aria-label="${esc(t.title)}">
+    <div class="proj" style="color:${projColor(t.project)}">${esc(t.project)}</div>
+    <h4>${esc(t.title)}</h4>
+    <div class="meta"><span class="prio ${t.priority}">${t.priority}</span><span class="due ${d.cls}">${esc(d.text)}</span>
+    ${pg !== null ? `<span>☑ ${t.checklist.filter(c=>c.done).length}/${t.checklist.length}</span>` : ''}
+    <span class="av" style="background:${ownerColor(t.owner)}" title="${esc(t.owner)}">${esc(initials(t.owner))}</span></div>
+    ${pg !== null ? `<div class="bar"><span style="width:${pg}%"></span></div>` : ''}
+  </article>`;
+}
+
+function renderBoard(list) {
+  $('#board').innerHTML = STATUSES.map(s => {
+    const items = list.filter(t => t.status === s.id).sort((a,b) => PRIO_RANK[a.priority]-PRIO_RANK[b.priority] || (a.due||'9').localeCompare(b.due||'9'));
+    return `<div class="col" data-status="${s.id}">
+      <div class="colhead"><h3><span class="dot" style="background:${s.color}"></span>${s.name}</h3><span class="pill">${items.length}</span></div>
+      ${items.map(card).join('') || '<div class="empty">Drop tasks here</div>'}
+      <button class="addcol" data-add="${s.id}">+ Add task</button></div>`;
+  }).join('');
+}
+
+function renderList(list) {
+  const val = t => ({title:t.title.toLowerCase(), project:t.project, status:STATUSES.findIndex(s=>s.id===t.status), priority:PRIO_RANK[t.priority], owner:t.owner, due:t.due||'9999', progress:progress(t) ?? -1})[sortKey];
+  const rows = [...list].sort((a,b) => { const x = val(a), y = val(b); return (x > y ? 1 : x < y ? -1 : 0) * sortDir; });
+  document.querySelectorAll('th').forEach(th => th.textContent = th.textContent.replace(/ [▲▼]$/, '') + (th.dataset.sort === sortKey ? (sortDir > 0 ? ' ▲' : ' ▼') : ''));
+  $('#rows').innerHTML = rows.map(t => { const s = statusOf(t.status), d = dueInfo(t), pg = progress(t); return `<tr data-id="${t.id}">
+    <td><strong>${esc(t.title)}</strong></td><td><span class="proj" style="color:${projColor(t.project)}">${esc(t.project)}</span></td>
+    <td><span class="st" style="background:${s.color}22;color:${s.color}">${s.name}</span></td><td><span class="prio ${t.priority}">${t.priority}</span></td>
+    <td>${esc(t.owner)}</td><td class="due ${d.cls}">${esc(d.text)}</td><td>${pg === null ? '—' : pg + '%'}</td></tr>`; }).join('')
+    || '<tr><td colspan="7" class="empty">No tasks match these filters.</td></tr>';
+}
+
+function renderDash(list) {
+  const open = list.filter(t => t.status !== 'done');
+  const overdue = open.filter(t => t.due && daysLeft(t.due) < 0);
+  const done = list.length - open.length;
+  const pct = list.length ? Math.round(done / list.length * 100) : 0;
+  $('#kpis').innerHTML = `
+    <div class="kpi"><span>Total tasks</span><b>${list.length}</b></div>
+    <div class="kpi"><span>In progress</span><b>${list.filter(t=>t.status==='doing').length}</b></div>
+    <div class="kpi warn"><span>Overdue</span><b>${overdue.length}</b></div>
+    <div class="kpi good"><span>Completion</span><b>${pct}%</b></div>`;
+  const ps = [...new Set(list.map(t => t.project))].sort();
+  $('#byProject').innerHTML = ps.map(p => {
+    const items = list.filter(t => t.project === p), n = items.length;
+    const segs = STATUSES.map(s => { const c = items.filter(t => t.status === s.id).length; return c ? `<span style="width:${c/n*100}%;background:${s.color}" title="${s.name}: ${c}"></span>` : ''; }).join('');
+    const dn = items.filter(t => t.status === 'done').length;
+    return `<div class="row"><div class="lbl"><span>${esc(p)}</span><em>${dn}/${n} done · ${Math.round(dn/n*100)}%</em></div><div class="stack">${segs}</div></div>`;
+  }).join('') || '<div class="empty">No tasks.</div>';
+  $('#legend').innerHTML = STATUSES.map(s => `<span><span class="dot" style="background:${s.color}"></span> ${s.name}</span>`).join('');
+  const up = open.filter(t => t.due && daysLeft(t.due) >= 0 && daysLeft(t.due) <= 7).sort((a,b) => a.due.localeCompare(b.due));
+  $('#upcoming').innerHTML = up.map(t => `<li data-id="${t.id}"><span>${esc(t.title)}</span><span class="due ${dueInfo(t).cls}">${esc(dueInfo(t).text)}</span></li>`).join('') || '<li class="empty">Nothing due this week.</li>';
+  const os = [...new Set(open.map(t => t.owner))].sort();
+  const max = Math.max(1, ...os.map(o => open.filter(t => t.owner === o).length));
+  $('#byOwner').innerHTML = os.map(o => { const c = open.filter(t => t.owner === o).length, late = open.filter(t => t.owner === o && t.due && daysLeft(t.due) < 0).length;
+    return `<div class="row"><div class="lbl"><span>${esc(o)}</span><em>${c} open${late ? ` · <span style="color:var(--red)">${late} late</span>` : ''}</em></div><div class="bar"><span style="width:${c/max*100}%;background:${ownerColor(o)}"></span></div></div>`; }).join('') || '<div class="empty">No open tasks.</div>';
+}
+
+/* modal */
+function openModal(task, status) {
+  editing = task ? task.id : null;
+  $('#mTitle').textContent = task ? 'Edit task' : 'New task';
+  $('#tStatus').innerHTML = STATUSES.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  $('#projList').innerHTML = projects().map(p => `<option value="${esc(p)}">`).join('');
+  $('#ownerList').innerHTML = owners().map(o => `<option value="${esc(o)}">`).join('');
+  $('#tTitle').value = task?.title || '';
+  $('#tDesc').value = task?.desc || '';
+  $('#tProject').value = task?.project || $('#fProject').value || projects()[0] || '';
+  $('#tOwner').value = task?.owner || '';
+  $('#tStatus').value = task?.status || status || 'todo';
+  $('#tPrio').value = task?.priority || 'Medium';
+  $('#tDue').value = task?.due || plus(7);
+  draftChecks = (task?.checklist || []).map(c => ({...c}));
+  $('#delBtn').classList.toggle('hidden', !task);
+  renderChecks();
+  $('#overlay').classList.remove('hidden');
+  setTimeout(() => $('#tTitle').focus(), 30);
+}
+function closeModal() { $('#overlay').classList.add('hidden'); editing = null; }
+function renderChecks() {
+  $('#checks').innerHTML = draftChecks.map(c => `<li class="${c.done ? 'done' : ''}" data-cid="${c.id}"><input type="checkbox" ${c.done ? 'checked' : ''} aria-label="Mark done"><span>${esc(c.text)}</span><button type="button" aria-label="Remove item">×</button></li>`).join('');
+}
+function addCheck() { const v = $('#newCheck').value.trim(); if (!v) return; draftChecks.push({id:uid(), text:v, done:false}); $('#newCheck').value = ''; renderChecks(); $('#newCheck').focus(); }
+
+$('#checks').addEventListener('click', e => {
+  const li = e.target.closest('li'); if (!li) return; const c = draftChecks.find(x => x.id === li.dataset.cid);
+  if (e.target.tagName === 'BUTTON') draftChecks = draftChecks.filter(x => x !== c);
+  else if (e.target.type === 'checkbox') c.done = e.target.checked;
+  renderChecks();
+});
+$('#addCheck').onclick = addCheck;
+$('#newCheck').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addCheck(); } });
+$('#form').addEventListener('submit', e => {
+  e.preventDefault();
+  const data = {title:$('#tTitle').value.trim(), desc:$('#tDesc').value.trim(), project:$('#tProject').value.trim(), owner:$('#tOwner').value.trim(),
+    status:$('#tStatus').value, priority:$('#tPrio').value, due:$('#tDue').value, checklist:draftChecks};
+  if (!data.title || !data.project || !data.owner) return;
+  if (editing) Object.assign(tasks.find(t => t.id === editing), data);
+  else tasks.unshift({id:uid(), created:Date.now(), ...data});
+  save(); closeModal(); render(); toast(editing ? 'Task updated' : 'Task saved');
+});
+$('#delBtn').onclick = () => { if (!editing) return; tasks = tasks.filter(t => t.id !== editing); save(); closeModal(); render(); toast('Task deleted'); };
+$('#cancelBtn').onclick = closeModal;
+$('#overlay').addEventListener('mousedown', e => { if (e.target.id === 'overlay') closeModal(); });
+
+/* events */
+document.addEventListener('click', e => {
+  const add = e.target.closest('[data-add]'); if (add) return openModal(null, add.dataset.add);
+  const item = e.target.closest('.task, tbody tr[data-id], .upcoming li[data-id]');
+  if (item) openModal(tasks.find(t => t.id === item.dataset.id));
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#overlay').classList.contains('hidden')) closeModal();
+  if (e.key === 'Enter' && e.target.classList?.contains('task')) openModal(tasks.find(t => t.id === e.target.dataset.id));
+  if (e.key.toLowerCase() === 'n' && !e.metaKey && !e.ctrlKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && $('#overlay').classList.contains('hidden')) { e.preventDefault(); openModal(); }
+});
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  view = b.dataset.view;
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  ['board','list','dash'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+  render();
+});
+document.querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.sort; sortDir = sortKey === k ? -sortDir : 1; sortKey = k; render(); });
+['#q','#fProject','#fPrio','#fOwner'].forEach(s => $(s).addEventListener('input', render));
+$('#newBtn').onclick = () => openModal();
+$('#resetBtn').onclick = () => { tasks = seed(); save(); render(); toast('Demo data restored'); };
+$('#exportBtn').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(tasks, null, 2)], {type:'application/json'}));
+  a.download = 'taskflow-tasks.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+/* drag and drop */
+let dragId = null;
+$('#board').addEventListener('dragstart', e => { const t = e.target.closest('.task'); if (!t) return; dragId = t.dataset.id; t.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', dragId); } catch (x) {} });
+$('#board').addEventListener('dragend', e => { e.target.closest('.task')?.classList.remove('dragging'); document.querySelectorAll('.col.over').forEach(c => c.classList.remove('over')); });
+$('#board').addEventListener('dragover', e => { const col = e.target.closest('.col'); if (!col) return; e.preventDefault(); document.querySelectorAll('.col.over').forEach(c => c !== col && c.classList.remove('over')); col.classList.add('over'); });
+$('#board').addEventListener('drop', e => {
+  const col = e.target.closest('.col'); if (!col || !dragId) return; e.preventDefault();
+  const t = tasks.find(x => x.id === dragId); if (t && t.status !== col.dataset.status) { t.status = col.dataset.status; save(); toast(`Moved to ${statusOf(t.status).name}`); }
+  dragId = null; render();
+});
+
+let toastTimer;
+function toast(msg) { document.querySelector('.toast')?.remove(); const d = document.createElement('div'); d.className = 'toast'; d.textContent = msg; document.body.appendChild(d); clearTimeout(toastTimer); toastTimer = setTimeout(() => d.remove(), 1800); }
+
+render();
+})();
+</script>
+</body>
+</html>
